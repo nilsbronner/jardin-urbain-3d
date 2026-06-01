@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0e120a" />
+  <title>Le Grub — Gestion commerciale</title>
+  <style>
+    :root {
+      --bg: #0e120a;
+      --surface: #141810;
+      --surface2: #191e12;
+      --ink: #f3efe4;
+      --ink-dim: rgba(243,239,228,0.55);
+      --ink-faint: rgba(243,239,228,0.22);
+      --leaf: #9fbf5b;
+      --leaf-deep: #4f6b2f;
+      --leaf-bg: rgba(159,191,91,0.12);
+      --leaf-border: rgba(159,191,91,0.28);
+      --amber: #e8b84b;
+      --amber-bg: rgba(232,184,75,0.12);
+      --sky: #5b9fbf;
+      --sky-bg: rgba(91,159,191,0.12);
+      --orange: #bf8a5b;
+      --orange-bg: rgba(191,138,91,0.12);
+      --brick: #c96b6b;
+      --brick-bg: rgba(201,107,107,0.12);
+      --glass: rgba(20,26,14,0.65);
+      --border: rgba(243,239,228,0.09);
+      --border-strong: rgba(243,239,228,0.16);
+      --shadow: 0 8px 36px rgba(0,0,0,0.52);
+      --r: 12px;
+      --r-sm: 8px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+
+    /* ── TOPBAR ── */
+    #topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:4px;z-index:300;box-shadow:0 2px 20px rgba(0,0,0,0.45)}
+    .brand{display:flex;align-items:center;gap:9px;margin-right:22px;flex-shrink:0}
+    .brand-mark{width:8px;height:8px;border-radius:50%;background:var(--leaf);box-shadow:0 0 12px rgba(159,191,91,0.75)}
+    .brand-name{font-size:13px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase}
+    .nav-tabs{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+    .nav-tabs::-webkit-scrollbar{display:none}
+    .nav-tab{padding:7px 14px;border:none;background:transparent;color:var(--ink-dim);font-size:13px;font-weight:500;border-radius:var(--r-sm);cursor:pointer;letter-spacing:0.02em;transition:all .2s;white-space:nowrap;flex-shrink:0}
+    .nav-tab:hover{color:var(--ink);background:rgba(243,239,228,0.06)}
+    .nav-tab.active{color:var(--leaf);background:var(--leaf-bg)}
+    .topbar-date{margin-left:auto;flex-shrink:0;font-size:12px;color:var(--ink-dim);white-space:nowrap}
+
+    /* ── VIEWS ── */
+    #app{position:fixed;inset:0;top:56px;overflow:hidden}
+    .view{display:none;position:absolute;inset:0;overflow-y:auto;padding:24px 22px 40px;scrollbar-width:thin;scrollbar-color:rgba(243,239,228,0.14) transparent}
+    .view::-webkit-scrollbar{width:5px}
+    .view::-webkit-scrollbar-thumb{background:rgba(243,239,228,0.14);border-radius:3px}
+    .view.active{display:block}
+
+    /* ── HEADERS ── */
+    .view-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+    .view-title{font-size:20px;font-weight:700;letter-spacing:-0.01em}
+    .view-sub{font-size:12px;color:var(--ink-dim);margin-top:3px}
+
+    /* ── BUTTONS ── */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;letter-spacing:.01em;white-space:nowrap}
+    .btn-primary{background:var(--leaf);color:#1a2010}
+    .btn-primary:hover{background:#add45e}
+    .btn-ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--border-strong)}
+    .btn-ghost:hover{color:var(--ink);background:rgba(243,239,228,0.05)}
+    .btn-sm{padding:5px 11px;font-size:12px}
+    .btn-icon{width:28px;height:28px;padding:0;justify-content:center;background:rgba(243,239,228,0.07);border:none;border-radius:6px;color:var(--ink-dim);font-size:13px;cursor:pointer;transition:all .15s}
+    .btn-icon:hover{background:rgba(243,239,228,0.13);color:var(--ink)}
+    .btn-icon.del:hover{background:var(--brick-bg);color:var(--brick)}
+
+    /* ── KPI CARDS ── */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:22px}
+    .kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px}
+    .kpi-label{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:9px}
+    .kpi-value{font-size:26px;font-weight:800;letter-spacing:-.02em}
+    .kpi-sub{font-size:11px;color:var(--ink-dim);margin-top:4px}
+    .c-green{color:var(--leaf)} .c-amber{color:var(--amber)} .c-red{color:var(--brick)} .c-sky{color:var(--sky)}
+
+    /* ── PANEL ── */
+    .panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+    .panel-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .panel-title{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
+
+    /* ── TABLES ── */
+    .table-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+    .table-wrap.scrollable{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{background:rgba(243,239,228,0.04);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:rgba(243,239,228,0.028)}
+    tbody td{padding:10px 14px;vertical-align:middle}
+    .td-dim{color:var(--ink-dim);font-size:12px}
+    .td-strong{font-size:13px;font-weight:600}
+    .td-mono{font-variant-numeric:tabular-nums;font-weight:600}
+
+    /* ── BADGES ── */
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+    .b-gray{background:rgba(243,239,228,0.10);color:var(--ink-dim)}
+    .b-amber{background:var(--amber-bg);color:var(--amber)}
+    .b-sky{background:var(--sky-bg);color:var(--sky)}
+    .b-orange{background:var(--orange-bg);color:var(--orange)}
+    .b-green{background:var(--leaf-bg);color:var(--leaf)}
+    .b-red{background:var(--brick-bg);color:var(--brick)}
+
+    /* ── TOOLBAR ── */
+    .toolbar{display:flex;align-items:center;gap:9px;margin-bottom:15px;flex-wrap:wrap}
+    .search-input{flex:1;min-width:150px;max-width:260px;padding:8px 13px;background:var(--surface2);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink);font-size:13px;outline:none;transition:border-color .2s}
+    .search-input::placeholder{color:var(--ink-dim)}
+    .search-input:focus{border-color:var(--leaf)}
+    select.sel{padding:7px 11px;background:var(--surface2);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink);font-size:13px;outline:none;cursor:pointer;transition:border-color .2s}
+    select.sel:focus{border-color:var(--leaf)}
+    select.sel option{background:#191e12}
+
+    /* ── ROW ACTIONS ── */
+    .row-acts{display:flex;gap:5px;opacity:0;transition:opacity .15s}
+    tbody tr:hover .row-acts{opacity:1}
+
+    /* ── FUNNEL ── */
+    .funnel{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .funnel-col{background:rgba(243,239,228,0.04);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 8px;text-align:center}
+    .funnel-n{font-size:24px;font-weight:800}
+    .funnel-lbl{font-size:10px;color:var(--ink-dim);margin-top:3px;line-height:1.3}
+    .funnel-amt{font-size:10px;opacity:.55;margin-top:2px}
+
+    /* ── SUBTABS ── */
+    .subtabs{display:flex;gap:6px;margin-bottom:18px}
+    .subtab{padding:6px 16px;background:transparent;border:1px solid var(--border-strong);border-radius:20px;font-size:13px;color:var(--ink-dim);cursor:pointer;transition:all .2s}
+    .subtab.active{background:var(--leaf-bg);color:var(--leaf);border-color:var(--leaf-border)}
+
+    /* ── CONTACT GRID ── */
+    .contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:11px}
+    .cc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:15px;transition:border-color .2s}
+    .cc:hover{border-color:var(--border-strong)}
+    .cc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+    .cc-name{font-size:14px;font-weight:700;line-height:1.3}
+    .cc-contact{font-size:12px;color:var(--ink-dim);margin-top:2px}
+    .cc-sector{font-size:11px;color:var(--ink-dim);line-height:1.45;margin-top:5px}
+    .cc-note{font-size:11px;color:var(--ink-dim);opacity:.7;font-style:italic;margin-top:4px;line-height:1.4}
+    .cc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:11px;gap:6px}
+    .cc-offre{font-size:11px;color:var(--ink-dim);flex:1;line-height:1.3}
+    select.cc-sel{padding:3px 8px;font-size:11px;background:var(--surface);border:1px solid var(--border-strong);border-radius:6px;color:var(--ink);outline:none;cursor:pointer;flex-shrink:0}
+    select.cc-sel option{background:#191e12}
+
+    /* ── KIT ── */
+    .kit-sec{margin-bottom:30px}
+    .kit-head{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--leaf);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+    .kit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+    .kit-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+    .kit-cname{font-size:14px;font-weight:600;margin-bottom:5px}
+    .kit-price{font-size:19px;font-weight:800;color:var(--leaf);margin-bottom:7px}
+    .kit-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-dim);flex-wrap:wrap}
+    .tpl-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:9px;position:relative}
+    .tpl-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:9px}
+    .tpl-txt{font-size:13px;line-height:1.65;color:var(--ink-dim);font-style:italic}
+    .tpl-copy{position:absolute;top:12px;right:14px}
+    .rule-list{display:flex;flex-direction:column;gap:7px}
+    .rule-item{display:flex;gap:11px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px}
+    .rule-n{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--leaf-bg);color:var(--leaf);border-radius:50%;font-size:11px;font-weight:700}
+    .rule-txt{font-size:13px;line-height:1.55;color:var(--ink-dim)}
+
+    /* ── MODAL ── */
+    .modal-ov{display:none;position:fixed;inset:0;background:rgba(4,6,3,0.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);z-index:500;align-items:center;justify-content:center;padding:18px}
+    .modal-ov.open{display:flex}
+    .modal-box{background:#181e11;border:1px solid var(--border-strong);border-radius:16px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:0 28px 80px rgba(0,0,0,0.65);scrollbar-width:thin;scrollbar-color:rgba(243,239,228,0.12) transparent}
+    .modal-box::-webkit-scrollbar{width:4px}
+    .modal-box::-webkit-scrollbar-thumb{background:rgba(243,239,228,0.12);border-radius:2px}
+    .modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:19px 24px 15px;border-bottom:1px solid var(--border)}
+    .modal-title{font-size:16px;font-weight:700}
+    .modal-close{width:30px;height:30px;background:rgba(243,239,228,0.08);border:none;border-radius:8px;color:var(--ink-dim);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .modal-close:hover{background:rgba(243,239,228,0.14);color:var(--ink)}
+    .modal-body{padding:20px 24px}
+    .modal-ftr{padding:15px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:9px}
+
+    /* ── FORM ── */
+    .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+    .fg{display:flex;flex-direction:column;gap:5px}
+    .fg.full{grid-column:1/-1}
+    .fg-sep{grid-column:1/-1;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--leaf);padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+    .flbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)}
+    .finput{padding:9px 12px;background:rgba(243,239,228,0.05);border:1px solid var(--border-strong);border-radius:var(--r-sm);color:var(--ink);font-size:13px;outline:none;transition:border-color .2s;width:100%}
+    .finput:focus{border-color:var(--leaf)}
+    .finput::placeholder{color:var(--ink-faint)}
+    select.finput option{background:#181e11}
+    textarea.finput{min-height:78px;resize:vertical}
+
+    /* ── EMPTY STATE ── */
+    .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 24px;color:var(--ink-dim);text-align:center}
+    .empty-ico{font-size:32px;margin-bottom:10px;opacity:.38}
+    .empty-ttl{font-size:14px;font-weight:600;margin-bottom:5px;color:var(--ink-dim)}
+    .empty-sub{font-size:12px;line-height:1.5}
+
+    /* ── URGENCY ── */
+    .u-red{color:var(--brick);font-weight:600}
+    .u-amber{color:var(--amber)}
+
+    /* ── PROGRESS ── */
+    .prog{width:100%;height:4px;background:rgba(243,239,228,0.08);border-radius:2px;overflow:hidden;margin-top:6px}
+    .prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--leaf-deep),var(--leaf));transition:width .4s}
+
+    /* ── DASH GRID ── */
+    .dash-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#1e2817;border:1px solid var(--leaf-border);color:var(--leaf);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:700px){
+      .brand-name{display:none}
+      .nav-tab{padding:7px 10px;font-size:12px}
+      .view{padding:16px 13px 32px}
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .fgrid{grid-template-columns:1fr}
+      .fg.full,.fg-sep{grid-column:1}
+      .contact-grid{grid-template-columns:1fr}
+      .dash-2{grid-template-columns:1fr}
+      .funnel{grid-template-columns:repeat(3,1fr)}
+      .topbar-date{display:none}
+      .kit-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <span class="brand-name">Le Grub</span>
+  </div>
+  <nav class="nav-tabs" id="nav">
+    <button class="nav-tab active" data-view="dashboard">Dashboard</button>
+    <button class="nav-tab" data-view="pipeline">Pipeline</button>
+    <button class="nav-tab" data-view="production">Production</button>
+    <button class="nav-tab" data-view="contacts">Contacts</button>
+    <button class="nav-tab" data-view="kit">Kit commercial</button>
+  </nav>
+  <div class="topbar-date" id="topbar-date"></div>
+</header>
+
+<main id="app">
+
+<!-- ═══ DASHBOARD ═══ -->
+<section id="view-dashboard" class="view active">
+  <div class="view-header">
+    <div>
+      <div class="view-title">Tableau de bord</div>
+      <div class="view-sub" id="dash-sub">Semaine en cours</div>
+    </div>
+    <button class="btn btn-primary" onclick="openPipelineModal()">+ Ajouter prospect</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Prospects actifs</div><div class="kpi-value" id="kpi-actifs">0</div><div class="kpi-sub">dans le pipeline</div></div>
+    <div class="kpi-card"><div class="kpi-label">CA estimé</div><div class="kpi-value c-amber" id="kpi-ca-est">0 €</div><div class="kpi-sub">devis en cours</div></div>
+    <div class="kpi-card"><div class="kpi-label">CA signé</div><div class="kpi-value c-green" id="kpi-ca-signe">0 €</div><div class="kpi-sub">HT</div></div>
+    <div class="kpi-card"><div class="kpi-label">CA encaissé</div><div class="kpi-value c-green" id="kpi-ca-enc">0 €</div><div class="kpi-sub">HT</div></div>
+    <div class="kpi-card"><div class="kpi-label">Relances urgentes</div><div class="kpi-value c-amber" id="kpi-relances">0</div><div class="kpi-sub">dans les 7 jours</div></div>
+    <div class="kpi-card"><div class="kpi-label">Projets actifs</div><div class="kpi-value" id="kpi-projets">0</div><div class="kpi-sub">en production</div></div>
+  </div>
+
+  <div class="dash-2">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Relances prioritaires</span>
+        <button class="btn btn-ghost btn-sm" onclick="switchView('pipeline')">Voir tout →</button>
+      </div>
+      <div id="dash-relances"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Funnel par statut</span></div>
+      <div style="padding:16px"><div class="funnel" id="dash-funnel"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Derniers ajouts</span>
+    </div>
+    <div id="dash-recent"></div>
+  </div>
+</section>
+
+<!-- ═══ PIPELINE ═══ -->
+<section id="view-pipeline" class="view">
+  <div class="view-header">
+    <div>
+      <div class="view-title">Pipeline commercial</div>
+      <div class="view-sub" id="pipeline-sub">0 prospect(s)</div>
+    </div>
+    <button class="btn btn-primary" onclick="openPipelineModal()">+ Ajouter prospect</button>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" placeholder="Rechercher…" id="pip-search" oninput="renderPipeline()">
+    <select class="sel" id="pip-f-statut" onchange="renderPipeline()">
+      <option value="">Tous statuts</option>
+      <option>À contacter</option><option>Relancé</option><option>Devis envoyé</option>
+      <option>Négociation</option><option>Signé</option><option>Perdu</option>
+    </select>
+    <select class="sel" id="pip-f-famille" onchange="renderPipeline()">
+      <option value="">Toutes familles</option>
+      <option>Espaces</option><option>Production rapide</option><option>Preuve sociale &amp; acquisition</option>
+    </select>
+    <select class="sel" id="pip-f-resp" onchange="renderPipeline()">
+      <option value="">Tous resp.</option>
+      <option>Nils</option><option>Luc</option><option>Matteo</option><option>Nicolas</option>
+    </select>
+  </div>
+
+  <div class="table-wrap scrollable">
+    <table>
+      <thead><tr>
+        <th>Prospect / Client</th><th>Contact</th><th>Famille</th><th>Offre</th>
+        <th>Montant</th><th>%</th><th>Statut</th>
+        <th>Prochaine action</th><th>Resp.</th><th>CA signé</th><th></th>
+      </tr></thead>
+      <tbody id="pip-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ PRODUCTION ═══ -->
+<section id="view-production" class="view">
+  <div class="view-header">
+    <div>
+      <div class="view-title">Suivi de production</div>
+      <div class="view-sub" id="prod-sub">0 projet(s)</div>
+    </div>
+    <button class="btn btn-primary" onclick="openProductionModal()">+ Nouveau projet</button>
+  </div>
+
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi-card"><div class="kpi-label">Projets actifs</div><div class="kpi-value" id="pk-actifs">0</div></div>
+    <div class="kpi-card"><div class="kpi-label">Temps estimé</div><div class="kpi-value" id="pk-t-est">0 h</div></div>
+    <div class="kpi-card"><div class="kpi-label">Temps réel</div><div class="kpi-value c-amber" id="pk-t-reel">0 h</div></div>
+    <div class="kpi-card"><div class="kpi-label">Marge brute</div><div class="kpi-value c-green" id="pk-marge">0 €</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" placeholder="Rechercher projet…" id="prod-search" oninput="renderProduction()">
+    <select class="sel" id="prod-f-statut" onchange="renderProduction()">
+      <option value="">Tous statuts</option>
+      <option>À démarrer</option><option>En cours</option><option>En révision</option><option>Livré</option>
+    </select>
+    <select class="sel" id="prod-f-resp" onchange="renderProduction()">
+      <option value="">Tous resp.</option>
+      <option>Nils</option><option>Luc</option><option>Matteo</option><option>Nicolas</option>
+    </select>
+  </div>
+
+  <div class="table-wrap scrollable">
+    <table>
+      <thead><tr>
+        <th>Client / Projet</th><th>Offre</th><th>Resp.</th><th>Statut</th>
+        <th>Livraison prévue</th><th>T. est.</th><th>T. réel</th><th>Écart</th>
+        <th>Prix vendu</th><th>Marge brute</th><th></th>
+      </tr></thead>
+      <tbody id="prod-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ CONTACTS ═══ -->
+<section id="view-contacts" class="view">
+  <div class="view-header">
+    <div>
+      <div class="view-title">Contacts</div>
+      <div class="view-sub">ARIA Alsace · Agences Strasbourg</div>
+    </div>
+  </div>
+
+  <div class="subtabs">
+    <button class="subtab active" data-sub="aria" onclick="switchSub('aria')">ARIA Alsace (33)</button>
+    <button class="subtab" data-sub="agences" onclick="switchSub('agences')">Agences (20)</button>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" type="text" placeholder="Rechercher…" id="ct-search" oninput="renderContacts()">
+    <select class="sel" id="ct-f-statut" onchange="renderContacts()">
+      <option value="">Tous statuts</option>
+      <option>À contacter</option><option>Contacté</option><option>En discussion</option><option>Dans le pipeline</option>
+    </select>
+  </div>
+
+  <div id="ct-aria"></div>
+  <div id="ct-agences" style="display:none"></div>
+</section>
+
+<!-- ═══ KIT COMMERCIAL ═══ -->
+<section id="view-kit" class="view">
+  <div class="view-header">
+    <div>
+      <div class="view-title">Kit commercial</div>
+      <div class="view-sub">Grille tarifaire · Templates · Règles</div>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Famille 1 — Espaces</div>
+    <div class="kit-grid">
+      <div class="kit-card"><div class="kit-cname">Coworking</div><div class="kit-price">250 € HT / mois</div><div class="kit-meta"><span>Indépendants, TPE</span><span class="badge b-green">Récurrent</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Domiciliation</div><div class="kit-price">30 € HT / mois</div><div class="kit-meta"><span>Entreprises, micro</span><span class="badge b-green">Récurrent</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Location de salle</div><div class="kit-price">À partir de 100 € HT / demi-j.</div><div class="kit-meta"><span>Formations, réunions, événements</span><span class="badge b-sky">Ponctuel</span></div></div>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Famille 2 — Production rapide</div>
+    <div class="kit-grid">
+      <div class="kit-card"><div class="kit-cname">Reportage photo événementiel</div><div class="kit-price">À partir de 500 € HT</div><div class="kit-meta"><span>PME, organisateurs</span><span class="badge b-sky">Ponctuel</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Reportage photo + vidéo</div><div class="kit-price">À partir de 2 500 € HT</div><div class="kit-meta"><span>PME, entreprises</span><span class="badge b-sky">Ponctuel</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Portrait corporate</div><div class="kit-price">150 € HT / heure</div><div class="kit-meta"><span>Dirigeants, équipes</span><span class="badge b-sky">Ponctuel</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Vidéo manifeste / institutionnelle</div><div class="kit-price">À partir de 2 500 € HT</div><div class="kit-meta"><span>PME, institutionnels</span><span class="badge b-sky">Ponctuel</span></div></div>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Famille 3 — Preuve sociale &amp; acquisition</div>
+    <div class="kit-grid">
+      <div class="kit-card"><div class="kit-cname">Témoignage client filmé</div><div class="kit-price">990 € HT / témoignage</div><div class="kit-meta"><span>Entreprises B2B</span><span class="badge b-amber">Ponctuel / pack</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Podcast / émission packagée</div><div class="kit-price">À partir de 1 200 € HT</div><div class="kit-meta"><span>Marques, experts</span><span class="badge b-amber">Récurrent possible</span></div></div>
+      <div class="kit-card"><div class="kit-cname">Campagne Ads</div><div class="kit-price">À partir de 3 500 € HT</div><div class="kit-meta"><span>Profils ciblés</span><span class="badge b-green">Mensuel</span></div></div>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Templates de relance — WhatsApp / LinkedIn</div>
+    <div class="tpl-card">
+      <div class="tpl-lbl">Espaces</div>
+      <div class="tpl-txt" id="tpl-1">Salut [Prénom], On a ouvert de nouvelles formules au Grub — coworking, domiciliation, location de salles. À partir de 30 € HT/mois. Dispo pour un tour rapide ? Nils</div>
+      <button class="btn btn-ghost btn-sm tpl-copy" onclick="copyTpl('tpl-1')">Copier</button>
+    </div>
+    <div class="tpl-card">
+      <div class="tpl-lbl">Reportage événementiel</div>
+      <div class="tpl-txt" id="tpl-2">Salut [Prénom], Vous avez des événements cet été à couvrir ? Reportages photo/vidéo entreprise — livraison rapide, à partir de 500 € HT. Je peux envoyer des exemples si vous voulez. Nils — Le Grub</div>
+      <button class="btn btn-ghost btn-sm tpl-copy" onclick="copyTpl('tpl-2')">Copier</button>
+    </div>
+    <div class="tpl-card">
+      <div class="tpl-lbl">Témoignages clients</div>
+      <div class="tpl-txt" id="tpl-3">Salut [Prénom], Offre témoignages clients — interview filmée, montée, prête à publier. À partir de 990 € HT. Bon ROI si vous avez des clients satisfaits à mettre en avant. Nils — Le Grub</div>
+      <button class="btn btn-ghost btn-sm tpl-copy" onclick="copyTpl('tpl-3')">Copier</button>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Règles commerciales</div>
+    <div class="rule-list">
+      <div class="rule-item"><div class="rule-n">R1</div><div class="rule-txt">Une offre = un prix, un livrable, un délai, un temps estimé, une marge attendue.</div></div>
+      <div class="rule-item"><div class="rule-n">R2</div><div class="rule-txt">Toute prestation prévoit un acompte ou une règle d'encaissement claire.</div></div>
+      <div class="rule-item"><div class="rule-n">R3</div><div class="rule-txt">Pas plus de 3 familles d'offres visibles dans un même support commercial.</div></div>
+      <div class="rule-item"><div class="rule-n">R4</div><div class="rule-txt">Toute demande entrante inscrite dans le pipeline, même si elle semble faible.</div></div>
+      <div class="rule-item"><div class="rule-n">R5</div><div class="rule-txt">Tout dépassement de temps documenté : mauvaise estimation, client mal cadré.</div></div>
+      <div class="rule-item"><div class="rule-n">R6</div><div class="rule-txt">Podcast et témoignages surveillés — risque chronophage si process non standardisé.</div></div>
+    </div>
+  </div>
+
+  <div class="kit-sec">
+    <div class="kit-head">Prochaines actions</div>
+    <div class="rule-list">
+      <div class="rule-item"><div class="rule-n" style="background:var(--amber-bg);color:var(--amber)">01</div><div class="rule-txt">Lancer les relances sur la liste des 30 contacts — <strong>Nils + Luc</strong> — Cette semaine</div></div>
+      <div class="rule-item"><div class="rule-n" style="background:var(--amber-bg);color:var(--amber)">02</div><div class="rule-txt">Matteo prépare portfolio + exemples par offre — <strong>Matteo</strong> — Semaine 1-2</div></div>
+      <div class="rule-item"><div class="rule-n" style="background:var(--amber-bg);color:var(--amber)">03</div><div class="rule-txt">Remplir le pipeline avec les 30 premiers contacts — <strong>Nils</strong> — Cette semaine</div></div>
+      <div class="rule-item"><div class="rule-n" style="background:var(--amber-bg);color:var(--amber)">04</div><div class="rule-txt">Point de pilotage hebdo 45 min — <strong>Toute l'équipe</strong> — À fixer</div></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══ MODAL PIPELINE ═══ -->
+<div class="modal-ov" id="modal-pip">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="mp-title">Ajouter un prospect</div>
+      <button class="modal-close" onclick="closeModal('modal-pip')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid">
+        <div class="fg-sep">Identification</div>
+        <div class="fg"><label class="flbl">Prospect / Client *</label><input class="finput" id="mp-prospect" placeholder="Nom entreprise"></div>
+        <div class="fg"><label class="flbl">Contact</label><input class="finput" id="mp-contact" placeholder="Prénom Nom"></div>
+        <div class="fg full"><label class="flbl">Email / Tél</label><input class="finput" id="mp-coord" placeholder="email@… ou +33 6 …"></div>
+        <div class="fg"><label class="flbl">Source</label>
+          <select class="finput" id="mp-source"><option value="">—</option><option>ARIA Alsace</option><option>Agences</option><option>Direct / Réseau</option><option>Référence</option><option>Inbound</option></select>
+        </div>
+        <div class="fg"><label class="flbl">Responsable</label>
+          <select class="finput" id="mp-resp"><option>Nils</option><option>Luc</option><option>Matteo</option><option>Nicolas</option></select>
+        </div>
+
+        <div class="fg-sep">Offre</div>
+        <div class="fg"><label class="flbl">Famille</label>
+          <select class="finput" id="mp-famille"><option value="">—</option><option>Espaces</option><option>Production rapide</option><option>Preuve sociale &amp; acquisition</option></select>
+        </div>
+        <div class="fg"><label class="flbl">Offre détail</label>
+          <select class="finput" id="mp-offre">
+            <option value="">—</option>
+            <option>Coworking</option><option>Domiciliation</option><option>Location de salle</option>
+            <option>Reportage photo événementiel</option><option>Reportage photo + vidéo</option>
+            <option>Portrait corporate</option><option>Vidéo manifeste / institutionnelle</option>
+            <option>Témoignage client filmé</option><option>Podcast / émission packagée</option>
+            <option>Campagne Ads</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Montant estimé (€ HT)</label><input class="finput" id="mp-montant" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Probabilité (%)</label><input class="finput" id="mp-proba" type="number" min="0" max="100" placeholder="50"></div>
+
+        <div class="fg-sep">Suivi commercial</div>
+        <div class="fg"><label class="flbl">Statut</label>
+          <select class="finput" id="mp-statut"><option>À contacter</option><option>Relancé</option><option>Devis envoyé</option><option>Négociation</option><option>Signé</option><option>Perdu</option></select>
+        </div>
+        <div class="fg"><label class="flbl">Date 1er contact</label><input class="finput" id="mp-date1" type="date"></div>
+        <div class="fg"><label class="flbl">Prochaine action</label><input class="finput" id="mp-action" placeholder="ex: Envoyer devis"></div>
+        <div class="fg"><label class="flbl">Date prochaine action</label><input class="finput" id="mp-date-action" type="date"></div>
+        <div class="fg"><label class="flbl">Nb relances</label><input class="finput" id="mp-nb-rel" type="number" min="0" placeholder="0"></div>
+
+        <div class="fg-sep">Finance</div>
+        <div class="fg"><label class="flbl">CA signé (€ HT)</label><input class="finput" id="mp-ca-signe" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">CA encaissé (€ HT)</label><input class="finput" id="mp-ca-enc" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Marge estimée (€)</label><input class="finput" id="mp-marge" type="number" placeholder="0"></div>
+
+        <div class="fg full"><label class="flbl">Notes / Lien devis</label><textarea class="finput" id="mp-notes" placeholder="Notes, lien devis, remarques…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal('modal-pip')">Annuler</button>
+      <button class="btn btn-primary" onclick="savePip()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL PRODUCTION ═══ -->
+<div class="modal-ov" id="modal-prod">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="mprod-title">Nouveau projet</div>
+      <button class="modal-close" onclick="closeModal('modal-prod')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fgrid">
+        <div class="fg-sep">Projet</div>
+        <div class="fg"><label class="flbl">Client / Projet *</label><input class="finput" id="mprod-client" placeholder="Nom client — titre projet"></div>
+        <div class="fg"><label class="flbl">Offre</label>
+          <select class="finput" id="mprod-offre">
+            <option value="">—</option>
+            <option>Reportage photo événementiel</option><option>Reportage photo + vidéo</option>
+            <option>Portrait corporate</option><option>Vidéo manifeste / institutionnelle</option>
+            <option>Témoignage client filmé</option><option>Podcast / émission packagée</option>
+            <option>Campagne Ads</option><option>Coworking</option><option>Domiciliation</option><option>Location de salle</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Responsable</label>
+          <select class="finput" id="mprod-resp"><option>Nils</option><option>Luc</option><option>Matteo</option><option>Nicolas</option></select>
+        </div>
+        <div class="fg"><label class="flbl">Statut</label>
+          <select class="finput" id="mprod-statut"><option>À démarrer</option><option>En cours</option><option>En révision</option><option>Livré</option></select>
+        </div>
+
+        <div class="fg-sep">Planning</div>
+        <div class="fg"><label class="flbl">Date début</label><input class="finput" id="mprod-debut" type="date"></div>
+        <div class="fg"><label class="flbl">Livraison prévue</label><input class="finput" id="mprod-livr" type="date"></div>
+        <div class="fg"><label class="flbl">Livraison réelle</label><input class="finput" id="mprod-livr-r" type="date"></div>
+
+        <div class="fg-sep">Temps &amp; Budget</div>
+        <div class="fg"><label class="flbl">Temps estimé (h)</label><input class="finput" id="mprod-t-est" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Temps réel (h)</label><input class="finput" id="mprod-t-reel" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Taux horaire (€/h)</label><input class="finput" id="mprod-taux" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Prix vendu (€ HT)</label><input class="finput" id="mprod-prix" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Coût prod estimé (€)</label><input class="finput" id="mprod-cout" type="number" placeholder="0"></div>
+
+        <div class="fg full"><label class="flbl">Notes</label><textarea class="finput" id="mprod-notes" placeholder="Notes…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal('modal-prod')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveProd()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ────────────────────────────────────────────────────────────
+// STATIC DATA
+// ────────────────────────────────────────────────────────────
+const ARIA = [
+  {co:'Alélor',nm:'Alain Trautmann',sec:'Condiments, moutarde, raifort'},
+  {co:'Alsace Lait',nm:'Hervé Massot',sec:'Produits laitiers'},
+  {co:'Biscuiterie Albisser',nm:'Céline Albisser',sec:'Biscuits, bredele'},
+  {co:'Brasserie Licorne',nm:'Dominique Baudendiestel',sec:'Bières'},
+  {co:'Brasserie Meteor',nm:'Edouard Haag',sec:'Bières'},
+  {co:'Bretzel Burgard SAS',nm:'Emmanuel Goetz',sec:'Bretzels, pains'},
+  {co:'Café Sati SA',nm:'Nicolas Schulé',sec:'Cafés'},
+  {co:'Colin – PALC',nm:'Eric Colin',sec:'Ingrédients, matières premières'},
+  {co:'Feyel Artzner',nm:'Claudine Roposte',sec:'Foie gras, charcuterie'},
+  {co:'Fortwenger',nm:'Steve Risch',sec:"Pains d'épices"},
+  {co:'Heimburger S.A.',nm:'Philippe Heimburger',sec:'Pâtes alimentaires'},
+  {co:'Heineken France',nm:'Stéphane Crepel',sec:'Bières'},
+  {co:'Kronenbourg SAS',nm:'Céline Nicora',sec:'Bières'},
+  {co:'Les Grandes Sources de Wattwiller',nm:'Valérie Siegler',sec:'Eaux'},
+  {co:'Maison Le Pic',nm:'Sébastien Muller',sec:'Charcuterie, traiteur'},
+  {co:'Mars Wrigley Confectionery France',nm:'Hédi Hichri',sec:'Confiserie, chocolat'},
+  {co:'Melfor',nm:'Philippe Higy',sec:'Condiments, vinaigre'},
+  {co:'Metzger Muller S.A.',nm:'Daniel Muller',sec:'Charcuterie'},
+  {co:'Paul Heumann S.A.',nm:'Isabelle Heumann',sec:'Pains azymes'},
+  {co:'Pierre Schmidt',nm:'Laurence Cahen',sec:'Choucroute, plats cuisinés'},
+  {co:'Salpa',nm:'François De Bretagne',sec:'Volailles, viandes'},
+  {co:'SEM des Sources de Soultzmatt',nm:'Jacques Sérillon',sec:'Eaux minérales'},
+  {co:'Valfleuri SA',nm:'Jérôme Marienne',sec:'Pâtes alimentaires'},
+  {co:'Wolfberger',nm:'Bertrand Dufour',sec:"Vins, crémants, eaux-de-vie"},
+  {co:'A.A.P.F.',nm:'Brucker Bertrand',sec:'Pâtes fraîches'},
+  {co:'Abtey Chocolaterie',nm:'Wagner Anne-Catherine',sec:'Chocolat'},
+  {co:'Albagnac SAS',nm:'Grandazzi Florent',sec:'Equipements IAA'},
+  {co:'Alsacienne de Gastronomie (Maison Klein)',nm:'Klein Olivier',sec:'Charcuterie, traiteur'},
+  {co:'Maison de la Choucroute',nm:'',sec:'Choucroute'},
+  {co:"Pains Grand'Mère Stoeffler",nm:'',sec:'Pains, viennoiserie'},
+  {co:'Les Confitures du Climont',nm:'Perrine Hilberer',sec:'Confitures'},
+  {co:'Herbapack',nm:'',sec:'À confirmer'},
+  {co:'Nexicity',nm:'',sec:'À confirmer'},
+];
+
+const AGENCES = [
+  {co:'Novembre',nm:'',sec:'Stratégie, branding, motion & vidéo, retail design',note:'60+ experts, réseau international. Fort potentiel sous-traitance vidéo/motion'},
+  {co:'Citéasen',nm:'',sec:'Conseil, branding, direction artistique, digital',note:"30 ans d'expérience. Membre UCC Grand Est"},
+  {co:'Agence Crapules',nm:'',sec:'Com digitale, réseaux sociaux, webdesign',note:'Profil PME/TPE, budget accessible'},
+  {co:'Please Agency',nm:'',sec:'Webdesign, branding, réseaux sociaux, digital 360',note:''},
+  {co:'Woozup',nm:'',sec:'Identité de marque, com digitale, événementiel',note:'Approche agile, clients PME'},
+  {co:'Envol Communication',nm:'',sec:'Com digitale, vidéo, réseaux sociaux, métiers de bouche',note:'Spé gastronomie/artisans — bon fit ARIA'},
+  {co:'Tiz',nm:'',sec:'Performance digitale, web',note:"30 collab, 14 ans d'expérience"},
+  {co:'Dagré Communication',nm:'',sec:'Stratégie, identité, digital, TV, radio, événementiel',note:'Agence senior, bons budgets'},
+  {co:'Agile Business',nm:'',sec:'Marketing opérationnel, branding, UI/UX, digital',note:'Groupe 60 collab'},
+  {co:'GreenCub',nm:'',sec:'Com, design, print, digital',note:'Présence régionale forte'},
+  {co:'Alchimie Alsace',nm:'',sec:'Com digitale, print, événementiel',note:''},
+  {co:'Acte 5',nm:'',sec:'Graphisme, vidéo, animation, événementiel, marketing',note:'Très polyvalent, écoresponsable'},
+  {co:'Orient Communication',nm:'',sec:'Com sur-mesure, stratégie, print, digital',note:''},
+  {co:'Adipso',nm:'',sec:'Applis mobiles, sites internet, digital',note:''},
+  {co:'Actency',nm:'',sec:'Sites internet, extranet, e-commerce, Drupal',note:''},
+  {co:'Idaho',nm:'',sec:'Com, marketing, web, événementiel',note:''},
+  {co:'Agence Candide',nm:'',sec:'Com, événements culturels, pédagogique',note:'Profil culturel/associatif'},
+  {co:'My Branding Lab',nm:'',sec:'Com 360, pub, brand content, social media, événementiel',note:'Grands groupes + PME'},
+  {co:'Identité Pour De Vrai',nm:'',sec:'Événementiel, communication événementielle',note:'Fort potentiel reportage événements'},
+  {co:'Hybrid Concept (Nicolas)',nm:'Nicolas',sec:'Agence co-locataire Le Grub',note:'Co-production déjà en place'},
+];
+
+// ────────────────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────────────────
+let DB = {pipeline:[], production:[], statuts:{}};
+let editPipId = null;
+let editProdId = null;
+let activeSub = 'aria';
+
+function loadDB(){try{const r=localStorage.getItem('grub_v2');if(r)DB={...DB,...JSON.parse(r)}}catch(e){}}
+function saveDB(){localStorage.setItem('grub_v2',JSON.stringify(DB))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+// ────────────────────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────────────────────
+const STATUS_BADGE = {
+  'À contacter':'b-gray','Relancé':'b-amber','Devis envoyé':'b-sky',
+  'Négociation':'b-orange','Signé':'b-green','Perdu':'b-red',
+  'À démarrer':'b-gray','En cours':'b-sky','En révision':'b-amber','Livré':'b-green',
+  'Contacté':'b-sky','En discussion':'b-amber','Dans le pipeline':'b-green',
+};
+function badge(s){return`<span class="badge ${STATUS_BADGE[s]||'b-gray'}">${s}</span>`}
+
+function euros(n){
+  if(n===null||n===undefined||n==='') return '—';
+  const v=parseFloat(n);
+  if(isNaN(v)||v===0) return v===0?'0 €':'—';
+  return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+}
+function date(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+}
+function urgClass(d){
+  if(!d) return '';
+  const diff=(new Date(d)-new Date())/86400000;
+  if(diff<0) return 'u-red';
+  if(diff<=7) return 'u-amber';
+  return '';
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ────────────────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────────────────
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelector(`[data-view="${v}"]`).classList.add('active');
+  if(v==='dashboard') renderDash();
+  if(v==='pipeline')  renderPipeline();
+  if(v==='production')renderProduction();
+  if(v==='contacts')  renderContacts();
+}
+
+document.getElementById('nav').addEventListener('click',e=>{
+  const t=e.target.closest('.nav-tab');
+  if(t) switchView(t.dataset.view);
+});
+
+function switchSub(s){
+  activeSub=s;
+  document.querySelectorAll('.subtab').forEach(el=>el.classList.toggle('active',el.dataset.sub===s));
+  document.getElementById('ct-aria').style.display=s==='aria'?'':'none';
+  document.getElementById('ct-agences').style.display=s==='agences'?'':'none';
+  renderContacts();
+}
+
+// ────────────────────────────────────────────────────────────
+// DASHBOARD
+// ────────────────────────────────────────────────────────────
+function renderDash(){
+  const pip=DB.pipeline;
+  const prod=DB.production;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const week7=new Date(today); week7.setDate(today.getDate()+7);
+
+  // KPIs
+  const actifs=pip.filter(p=>!['Signé','Perdu'].includes(p.statut));
+  const caEst=actifs.reduce((s,p)=>s+(parseFloat(p.montant)||0),0);
+  const caSig=pip.reduce((s,p)=>s+(parseFloat(p.caSigne)||0),0);
+  const caEnc=pip.reduce((s,p)=>s+(parseFloat(p.caEnc)||0),0);
+  const relUrgents=pip.filter(p=>{
+    if(!p.dateAction||['Signé','Perdu'].includes(p.statut)) return false;
+    const d=new Date(p.dateAction);
+    return d<=week7;
+  });
+  const projActifs=prod.filter(p=>['À démarrer','En cours','En révision'].includes(p.statut)).length;
+
+  document.getElementById('kpi-actifs').textContent=actifs.length;
+  document.getElementById('kpi-ca-est').textContent=euros(caEst);
+  document.getElementById('kpi-ca-signe').textContent=euros(caSig);
+  document.getElementById('kpi-ca-enc').textContent=euros(caEnc);
+  document.getElementById('kpi-relances').textContent=relUrgents.length;
+  document.getElementById('kpi-projets').textContent=projActifs;
+
+  // Date header
+  const wd=new Date(today); wd.setDate(today.getDate()-today.getDay()+1);
+  document.getElementById('dash-sub').textContent='Semaine du '+wd.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('topbar-date').textContent=today.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+
+  // Relances
+  const relEl=document.getElementById('dash-relances');
+  if(!relUrgents.length){
+    relEl.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-ttl">Aucune relance urgente</div></div>`;
+  } else {
+    const rows=relUrgents.slice(0,8).map(p=>`<tr>
+      <td><strong>${p.prospect}</strong>${p.contact?`<br><span class="td-dim">${p.contact}</span>`:''}</td>
+      <td>${badge(p.statut)}</td>
+      <td>${p.action||'—'}</td>
+      <td class="${urgClass(p.dateAction)}">${date(p.dateAction)}</td>
+      <td class="td-dim">${p.resp||'—'}</td>
+    </tr>`).join('');
+    relEl.innerHTML=`<table><thead><tr><th>Prospect</th><th>Statut</th><th>Action</th><th>Date</th><th>Resp.</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // Funnel
+  const STATUTS=['À contacter','Relancé','Devis envoyé','Négociation','Signé','Perdu'];
+  const FC=['','u-amber','c-sky','c-orange','c-green','c-red'];
+  document.getElementById('dash-funnel').innerHTML=STATUTS.map((s,i)=>{
+    const n=pip.filter(p=>p.statut===s).length;
+    const m=pip.filter(p=>p.statut===s).reduce((acc,p)=>acc+(parseFloat(p.montant)||0),0);
+    return`<div class="funnel-col"><div class="funnel-n ${FC[i]}">${n}</div><div class="funnel-lbl">${s}</div>${m?`<div class="funnel-amt">${euros(m)}</div>`:'</div>'}\n</div>`;
+  }).join('');
+
+  // Recent
+  const recEl=document.getElementById('dash-recent');
+  if(!pip.length){
+    recEl.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-ttl">Pipeline vide</div><div class="empty-sub">Commencez par ajouter vos 30 premiers contacts</div></div>`;
+  } else {
+    const rows=[...pip].sort((a,b)=>b.ts-a.ts).slice(0,6).map(p=>`<tr>
+      <td><strong>${p.prospect}</strong></td>
+      <td class="td-dim">${p.famille||'—'}</td>
+      <td class="td-mono">${p.montant?euros(p.montant):'—'}</td>
+      <td>${badge(p.statut)}</td>
+      <td class="td-dim">${p.resp||'—'}</td>
+    </tr>`).join('');
+    recEl.innerHTML=`<table><thead><tr><th>Prospect</th><th>Famille</th><th>Montant</th><th>Statut</th><th>Resp.</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// PIPELINE
+// ────────────────────────────────────────────────────────────
+function renderPipeline(){
+  const q=(document.getElementById('pip-search').value||'').toLowerCase();
+  const fS=document.getElementById('pip-f-statut').value;
+  const fF=document.getElementById('pip-f-famille').value;
+  const fR=document.getElementById('pip-f-resp').value;
+
+  const data=DB.pipeline.filter(p=>{
+    if(fS&&p.statut!==fS) return false;
+    if(fF&&p.famille!==fF) return false;
+    if(fR&&p.resp!==fR) return false;
+    if(q){const h=`${p.prospect} ${p.contact} ${p.offre} ${p.notes}`.toLowerCase();if(!h.includes(q)) return false;}
+    return true;
+  });
+
+  document.getElementById('pipeline-sub').textContent=`${data.length} prospect(s)`;
+  const tb=document.getElementById('pip-tbody');
+
+  if(!data.length){
+    tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ttl">Aucun résultat</div></div></td></tr>`;
+    return;
+  }
+
+  tb.innerHTML=data.map(p=>`<tr>
+    <td><span class="td-strong">${p.prospect}</span>${p.contact?`<br><span class="td-dim">${p.contact}</span>`:''}</td>
+    <td class="td-dim" style="font-size:12px">${p.coord||'—'}</td>
+    <td class="td-dim" style="white-space:nowrap">${p.famille||'—'}</td>
+    <td style="white-space:nowrap;font-size:12px">${p.offre||'—'}</td>
+    <td class="td-mono">${p.montant?euros(p.montant):'—'}</td>
+    <td class="td-dim">${p.proba?p.proba+'%':'—'}</td>
+    <td>${badge(p.statut)}</td>
+    <td><span class="${urgClass(p.dateAction)}">${p.action||'—'}</span>${p.dateAction?`<br><span class="td-dim" style="font-size:11px">${date(p.dateAction)}</span>`:''}</td>
+    <td class="td-dim">${p.resp||'—'}</td>
+    <td class="td-mono">${p.caSigne?euros(p.caSigne):'—'}</td>
+    <td><div class="row-acts">
+      <button class="btn-icon" title="Modifier" onclick="editPip('${p.id}')">✏</button>
+      <button class="btn-icon del" title="Supprimer" onclick="delPip('${p.id}')">✕</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openPipelineModal(pre={}){
+  editPipId=pre.id||null;
+  document.getElementById('mp-title').textContent=editPipId?'Modifier prospect':'Ajouter un prospect';
+  const F={prospect:'mp-prospect',contact:'mp-contact',coord:'mp-coord',source:'mp-source',
+    resp:'mp-resp',famille:'mp-famille',offre:'mp-offre',montant:'mp-montant',
+    proba:'mp-proba',statut:'mp-statut',date1:'mp-date1',action:'mp-action',
+    dateAction:'mp-date-action',nbRel:'mp-nb-rel',caSigne:'mp-ca-signe',
+    caEnc:'mp-ca-enc',marge:'mp-marge',notes:'mp-notes'};
+  Object.entries(F).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=pre[k]||'';});
+  if(!editPipId){
+    document.getElementById('mp-statut').value='À contacter';
+    document.getElementById('mp-date1').value=new Date().toISOString().split('T')[0];
+  }
+  document.getElementById('modal-pip').classList.add('open');
+}
+
+function editPip(id){
+  const p=DB.pipeline.find(x=>x.id===id);
+  if(p) openPipelineModal({...p,contact:p.contact,resp:p.resp});
+}
+
+function savePip(){
+  const prospect=document.getElementById('mp-prospect').value.trim();
+  if(!prospect){document.getElementById('mp-prospect').focus();return;}
+  const entry={
+    id:editPipId||uid(),
+    prospect,
+    contact:document.getElementById('mp-contact').value.trim(),
+    coord:document.getElementById('mp-coord').value.trim(),
+    source:document.getElementById('mp-source').value,
+    resp:document.getElementById('mp-resp').value,
+    famille:document.getElementById('mp-famille').value,
+    offre:document.getElementById('mp-offre').value,
+    montant:parseFloat(document.getElementById('mp-montant').value)||0,
+    proba:parseInt(document.getElementById('mp-proba').value)||0,
+    statut:document.getElementById('mp-statut').value,
+    date1:document.getElementById('mp-date1').value,
+    action:document.getElementById('mp-action').value.trim(),
+    dateAction:document.getElementById('mp-date-action').value,
+    nbRel:parseInt(document.getElementById('mp-nb-rel').value)||0,
+    caSigne:parseFloat(document.getElementById('mp-ca-signe').value)||0,
+    caEnc:parseFloat(document.getElementById('mp-ca-enc').value)||0,
+    marge:parseFloat(document.getElementById('mp-marge').value)||0,
+    notes:document.getElementById('mp-notes').value.trim(),
+    ts:editPipId?(DB.pipeline.find(x=>x.id===editPipId)?.ts||Date.now()):Date.now(),
+  };
+  if(editPipId){const i=DB.pipeline.findIndex(x=>x.id===editPipId);if(i>=0)DB.pipeline[i]=entry;}
+  else DB.pipeline.push(entry);
+  saveDB(); closeModal('modal-pip'); renderPipeline(); renderDash();
+  toast(editPipId?'Prospect mis à jour':'Prospect ajouté au pipeline');
+}
+
+function delPip(id){
+  if(!confirm('Supprimer ce prospect du pipeline ?')) return;
+  DB.pipeline=DB.pipeline.filter(x=>x.id!==id);
+  saveDB(); renderPipeline(); renderDash();
+  toast('Supprimé');
+}
+
+// ────────────────────────────────────────────────────────────
+// PRODUCTION
+// ────────────────────────────────────────────────────────────
+function renderProduction(){
+  const q=(document.getElementById('prod-search').value||'').toLowerCase();
+  const fS=document.getElementById('prod-f-statut').value;
+  const fR=document.getElementById('prod-f-resp').value;
+
+  const data=DB.production.filter(p=>{
+    if(fS&&p.statut!==fS) return false;
+    if(fR&&p.resp!==fR) return false;
+    if(q){const h=`${p.client} ${p.offre} ${p.resp}`.toLowerCase();if(!h.includes(q)) return false;}
+    return true;
+  });
+
+  document.getElementById('prod-sub').textContent=`${data.length} projet(s)`;
+
+  const actifs=DB.production.filter(p=>['À démarrer','En cours','En révision'].includes(p.statut)).length;
+  const tEst=DB.production.reduce((s,p)=>s+(parseFloat(p.tEst)||0),0);
+  const tReel=DB.production.reduce((s,p)=>s+(parseFloat(p.tReel)||0),0);
+  const marge=DB.production.reduce((s,p)=>s+((parseFloat(p.prix)||0)-(parseFloat(p.cout)||0)),0);
+  document.getElementById('pk-actifs').textContent=actifs;
+  document.getElementById('pk-t-est').textContent=tEst+' h';
+  document.getElementById('pk-t-reel').textContent=tReel+' h';
+  document.getElementById('pk-marge').textContent=euros(marge);
+
+  const tb=document.getElementById('prod-tbody');
+  if(!data.length){
+    tb.innerHTML=`<tr><td colspan="11"><div class="empty"><div class="empty-ttl">Aucun projet</div></div></td></tr>`;
+    return;
+  }
+
+  tb.innerHTML=data.map(p=>{
+    const ec=(parseFloat(p.tReel)||0)-(parseFloat(p.tEst)||0);
+    const mg=(parseFloat(p.prix)||0)-(parseFloat(p.cout)||0);
+    return`<tr>
+      <td><span class="td-strong">${p.client}</span></td>
+      <td class="td-dim" style="font-size:12px">${p.offre||'—'}</td>
+      <td class="td-dim">${p.resp||'—'}</td>
+      <td>${badge(p.statut)}</td>
+      <td class="td-dim">${date(p.livr)}</td>
+      <td class="td-dim">${p.tEst?p.tEst+' h':'—'}</td>
+      <td class="td-dim">${p.tReel?p.tReel+' h':'—'}</td>
+      <td class="${ec>0?'u-red':ec<0?'c-green':''}">${ec>0?'+':''}${ec||0} h</td>
+      <td class="td-mono">${p.prix?euros(p.prix):'—'}</td>
+      <td class="td-mono ${mg>=0?'c-green':'u-red'}">${euros(mg)}</td>
+      <td><div class="row-acts">
+        <button class="btn-icon" onclick="editProd('${p.id}')">✏</button>
+        <button class="btn-icon del" onclick="delProd('${p.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openProductionModal(pre={}){
+  editProdId=pre.id||null;
+  document.getElementById('mprod-title').textContent=editProdId?'Modifier projet':'Nouveau projet';
+  const F={client:'mprod-client',offre:'mprod-offre',resp:'mprod-resp',statut:'mprod-statut',
+    debut:'mprod-debut',livr:'mprod-livr',livrR:'mprod-livr-r',
+    tEst:'mprod-t-est',tReel:'mprod-t-reel',taux:'mprod-taux',prix:'mprod-prix',
+    cout:'mprod-cout',notes:'mprod-notes'};
+  Object.entries(F).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.value=pre[k]||'';});
+  if(!editProdId) document.getElementById('mprod-statut').value='En cours';
+  document.getElementById('modal-prod').classList.add('open');
+}
+
+function editProd(id){
+  const p=DB.production.find(x=>x.id===id);
+  if(p) openProductionModal(p);
+}
+
+function saveProd(){
+  const client=document.getElementById('mprod-client').value.trim();
+  if(!client){document.getElementById('mprod-client').focus();return;}
+  const entry={
+    id:editProdId||uid(),
+    client,
+    offre:document.getElementById('mprod-offre').value,
+    resp:document.getElementById('mprod-resp').value,
+    statut:document.getElementById('mprod-statut').value,
+    debut:document.getElementById('mprod-debut').value,
+    livr:document.getElementById('mprod-livr').value,
+    livrR:document.getElementById('mprod-livr-r').value,
+    tEst:parseFloat(document.getElementById('mprod-t-est').value)||0,
+    tReel:parseFloat(document.getElementById('mprod-t-reel').value)||0,
+    taux:parseFloat(document.getElementById('mprod-taux').value)||0,
+    prix:parseFloat(document.getElementById('mprod-prix').value)||0,
+    cout:parseFloat(document.getElementById('mprod-cout').value)||0,
+    notes:document.getElementById('mprod-notes').value.trim(),
+    ts:editProdId?(DB.production.find(x=>x.id===editProdId)?.ts||Date.now()):Date.now(),
+  };
+  if(editProdId){const i=DB.production.findIndex(x=>x.id===editProdId);if(i>=0)DB.production[i]=entry;}
+  else DB.production.push(entry);
+  saveDB(); closeModal('modal-prod'); renderProduction(); renderDash();
+  toast(editProdId?'Projet mis à jour':'Projet créé');
+}
+
+function delProd(id){
+  if(!confirm('Supprimer ce projet ?')) return;
+  DB.production=DB.production.filter(x=>x.id!==id);
+  saveDB(); renderProduction();
+  toast('Supprimé');
+}
+
+// ────────────────────────────────────────────────────────────
+// CONTACTS
+// ────────────────────────────────────────────────────────────
+function ctKey(type,co){return type+'__'+co}
+function getStatut(type,co){
+  const k=ctKey(type,co);
+  if(DB.pipeline.some(p=>p.prospect===co)) return 'Dans le pipeline';
+  return DB.statuts[k]||'À contacter';
+}
+function setStatut(type,co,val){
+  DB.statuts[ctKey(type,co)]=val;
+  saveDB(); renderContacts();
+}
+
+function renderContacts(){
+  const q=(document.getElementById('ct-search').value||'').toLowerCase();
+  const fS=document.getElementById('ct-f-statut').value;
+
+  function buildGrid(list, type){
+    const filtered=list.filter(c=>{
+      const s=getStatut(type,c.co);
+      if(fS&&s!==fS) return false;
+      if(q){const h=`${c.co} ${c.nm} ${c.sec} ${c.note||''}`.toLowerCase();if(!h.includes(q)) return false;}
+      return true;
+    });
+    if(!filtered.length) return`<div class="empty"><div class="empty-ttl">Aucun résultat</div></div>`;
+    const cards=filtered.map((c,i)=>{
+      const s=getStatut(type,c.co);
+      const inPip=s==='Dans le pipeline';
+      const idx=list.indexOf(c);
+      const sel=inPip?`<span class="badge b-green">✓ Pipeline</span>`
+        :`<select class="cc-sel" onchange="setStatut('${type}','${c.co.replace(/'/g,"\\'")}',this.value)">
+          ${['À contacter','Contacté','En discussion'].map(o=>`<option ${s===o?'selected':''}>${o}</option>`).join('')}
+        </select>`;
+      return`<div class="cc">
+        <div class="cc-head">
+          <div>
+            <div class="cc-name">${c.co}</div>
+            ${c.nm?`<div class="cc-contact">${c.nm}</div>`:''}
+          </div>
+          ${sel}
+        </div>
+        <div class="cc-sector">${c.sec}</div>
+        ${c.note?`<div class="cc-note">${c.note}</div>`:''}
+        <div class="cc-footer">
+          <span class="td-dim" style="font-size:11px">Reportage événementiel</span>
+          ${!inPip?`<button class="btn btn-ghost btn-sm" onclick="addToPip('${type}',${list.indexOf(c)})">→ Pipeline</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    return`<div class="contact-grid">${cards}</div>`;
+  }
+
+  if(activeSub==='aria'){
+    document.getElementById('ct-aria').innerHTML=buildGrid(ARIA,'aria');
+  } else {
+    document.getElementById('ct-agences').innerHTML=buildGrid(AGENCES,'agences');
+  }
+}
+
+function addToPip(type, idx){
+  const c=type==='aria'?ARIA[idx]:AGENCES[idx];
+  const today=new Date().toISOString().split('T')[0];
+  openPipelineModal({
+    prospect:c.co, contact:c.nm,
+    source:type==='aria'?'ARIA Alsace':'Agences',
+    famille:'Production rapide',
+    offre:'Reportage photo événementiel',
+    statut:'À contacter', date1:today,
+  });
+  switchView('pipeline');
+}
+
+// ────────────────────────────────────────────────────────────
+// MODALS
+// ────────────────────────────────────────────────────────────
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  editPipId=null; editProdId=null;
+}
+document.querySelectorAll('.modal-ov').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov) closeModal(ov.id);});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal('modal-pip');closeModal('modal-prod');}
+});
+
+// ────────────────────────────────────────────────────────────
+// KIT — COPY TEMPLATE
+// ────────────────────────────────────────────────────────────
+function copyTpl(id){
+  const txt=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Template copié !')).catch(()=>{});
+}
+
+// ────────────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────────────
+loadDB();
+renderDash();
+</script>
+</body>
+</html>
